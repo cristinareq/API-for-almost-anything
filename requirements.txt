@@ -1,0 +1,8 @@
+streamlit
+openai
+requests
+beautifulsoup4
+pandas
+python-dotenv
+streamlit-option-menu
+selenium

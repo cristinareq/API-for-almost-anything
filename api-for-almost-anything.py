@@ -11,8 +11,16 @@ import secrets
 import base64
 from dotenv import load_dotenv
 
-# Load environment variables
+# for local dev only—loads .env into os.environ
 load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise RuntimeError("Missing OPENAI_API_KEY")
+
+# if you ever need to override the listening port, you can
+PORT = int(os.getenv("PORT", 5001))
+
 
 # Config and styling
 st.set_page_config(

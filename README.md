@@ -2,9 +2,7 @@
 
 *A Natural‑Language Web‑Scraping API Generator*
 
-> **Generate production‑ready FastAPI scrapers from a single sentence.**
-
-![screenshot](docs/hero.png)
+ **Generate production‑ready FastAPI scrapers from a single sentence.**
 
 ---
 
@@ -29,7 +27,7 @@
 
 ## Overview
 
-> “A tool that transforms natural‑language instructions into fully functional web‑scraping APIs.” — *Capstone thesis, April 2025*
+This is a tool that transforms natural‑language instructions into fully functional web‑scraping APIs.
 
 The project tackles the **API gap**: most websites still ship without public endpoints or impose price and rate limits. By combining **Streamlit**, **FastAPI**, **BeautifulSoup**, **Selenium** and **OpenAI GPT‑3.5 / GPT‑4o**, the app lets anyone type *“Extract all book titles and prices from this page”* and receive:
 

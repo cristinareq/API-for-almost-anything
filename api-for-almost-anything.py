@@ -126,6 +126,14 @@ def load_css():
 
 load_css()
 
+# --- User-responsibility disclaimer (shows on every page) ---
+st.sidebar.info(
+    "**Disclaimer**\n\n"
+    "You are solely responsible for any data you collect with this tool. "
+    "Scrape responsibly and comply with all applicable laws, robots.txt directives, "
+    "and the target site's terms of service."
+)
+
 # OpenAI API key handling
 def load_api_key():
     # Get API key from environment variable
@@ -165,44 +173,28 @@ def navigation():
 def home_page():
     
     st.markdown("<h1 class='header-text'>Natural Language API Generator</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 class='subheader-text'>Turn any public web page into a FastAPI endpoint in minutes</h2>", unsafe_allow_html=True)
 
     spacer, col1, spacer, col2 = st.columns([0.05, 2, 0.05, 1])
     with col1:
 
-        st.markdown("<h2 class='subheader-text'>Transform Web Data into APIs with Natural Language</h2>", unsafe_allow_html=True)
-        st.write("""
-        This tool helps you create APIs for web scraping using just natural language descriptions. Simply tell us what data you want to extract, and we'll use AI to:
+        st.markdown("#### What it does", unsafe_allow_html=True)
+        st.markdown(" &nbsp; • &nbsp; &nbsp; Analyses a target URL and proposes the best elements to scrape.\n\n")
+        st.markdown(" &nbsp; • &nbsp; &nbsp; Generates production-ready FastAPI code and Markdown docs.\n\n")
+        st.markdown(" &nbsp; • &nbsp; &nbsp; Lets you preview live data and export JSON / CSV.\n\n")
+        st.markdown(" &nbsp; • &nbsp; &nbsp; Can merge the new API into an existing Python project.\n\n\n")
         
-        1. **Analyse your requirements** and suggest data fields to extract
-        2. **Generate production-ready code** for a FastAPI application
-        3. **Preview the extracted data** to ensure it meets your needs
-        4. **Download the API code** and documentation ready to deploy
-        
-        Perfect for developers, data analysts, and researchers who need to extract structured data from websites without writing complex web scraping code from scratch.
-        """)
-        
-        st.markdown("<h3>How It Works</h3>", unsafe_allow_html=True)
-        st.write("""
-        1. **Describe what you need**: Tell us the website URL and explain what data you want to extract
-        2. **Review and select fields**: Choose from AI-recommended fields or customize your selection
-        3. **Generate your API**: Create a ready-to-use FastAPI application with documentation
-        4. **Test and download**: Preview the extracted data and download your code
-        """)
-    
-        st.markdown("<h3>Features</h3>", unsafe_allow_html=True)
-        st.markdown("""
-        - 🧠 AI-powered field detection
-        - 🚀 FastAPI integration
-        - 📊 Data preview capabilities
-        - 💾 Multiple export formats (JSON, CSV)
-        - 🔄 Code merging capabilities
-        - 📚 Comprehensive documentation
-        """)
-        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("#### Quick workflow", unsafe_allow_html=True)
+        st.markdown(
+            "1. **Paste URL + goal**  \n  2. **Pick fields**   \n "
+            "3. **Generate API**  \n  4. **Download or merge**\n"
+        )
+
     
     with col2:
     
-        st.markdown("<h3>Quick Start</h3>", unsafe_allow_html=True)
+        st.markdown("<h4>Quick Start</h4>", unsafe_allow_html=True)
         st.write("Ready to create your API? Click below to get started!")
         if st.button("Start Extracting Data", key="start_button"):
             st.session_state.page = "Extract"
@@ -293,7 +285,8 @@ def extract_page():
         with st.spinner("Analyzing your request and fetching essential HTML..."):
             try:
                 # Fetch the full HTML
-                response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+                response = requests.get(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
                 response.raise_for_status()
                 full_html = response.text
 
@@ -320,7 +313,7 @@ def extract_page():
                     essential_html = full_html  # fallback
                     
                 # Cut HTML to first 500,000 characters to stay under token limits
-                MAX_HTML_CHARS = 500000
+                MAX_HTML_CHARS = 420000
                 if len(essential_html) > MAX_HTML_CHARS:
                     essential_html = essential_html[:MAX_HTML_CHARS]
 
@@ -333,8 +326,10 @@ def extract_page():
 
                 # Now, call GPT with the filtered HTML content
                 gpt_response = ask_gpt_for_data_fields(url, user_explanation, essential_html)
-                st.markdown("### Raw GPT Response")
-                st.code(gpt_response, language="json")
+                
+                # See GPT output:
+                #st.markdown("### Raw GPT Response")
+                #st.code(gpt_response, language="json")
                 
                 try:
                     guessed_fields_obj = json.loads(gpt_response)
@@ -350,14 +345,9 @@ def extract_page():
                 estimated_tokens = char_count / 4  # using 4 characters per token as an average heuristic
                 estimated_cost = (estimated_tokens / 1000) * 0.005  # GPT-4o input cost
 
-                # # Display filtered HTML and token info
+                # Display filtered HTML
                 # with st.expander("📄 Essential HTML Content (optional view)", expanded=False):
                 #     st.text_area("Essential HTML", essential_html, height=300)
-
-                st.markdown("### 💰 Estimated Token Usage for GPT-4o")
-                st.write(f"- **Characters:** {char_count:,}")
-                st.write(f"- **Estimated tokens:** {int(estimated_tokens):,}")
-                st.write(f"- **Estimated cost (USD):** ${estimated_cost:.5f}")
 
                 st.success("Analysis and HTML fetch complete.")
 
@@ -376,7 +366,7 @@ def extract_page():
         try:
             # Fetch and parse the website HTML
             with st.spinner("Fetching website content..."):
-                response = requests.get(url)
+                response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, 'html.parser')
                 st.session_state["soup"] = soup
@@ -805,7 +795,7 @@ from bs4 import BeautifulSoup
 def extract_data_from_website(url, selected_fields):
     """
     Extract data from a website using requests and BeautifulSoup.
-    Falls back to a more robust method if simple request doesn't work.
+    Falls back to Selenium if simple request doesn't work.
     """
     try:
         # First attempt with simple requests
@@ -856,33 +846,129 @@ def extract_data_from_website(url, selected_fields):
         # Log the exception for debugging
         print(f"Error with simple extraction: {str(e)}")
         
-        # For a more production-ready solution, you could implement a fallback using
-        # Selenium, Playwright, or another headless browser here
-        
-        # Simple fallback with retry and different parsing
+        # Fall back to Selenium for JavaScript-heavy sites
+        print("Falling back to Selenium for extraction...")
         try:
-            # Try with a different parser
-            response = requests.get(url, headers={
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15'
-            })
-            soup = BeautifulSoup(response.text, 'html5lib')  # Use html5lib if available
+            # Set up Chrome options for headless browsing
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
             
-            results = {}
-            for field_obj in selected_fields:
-                field_name = field_obj.get("field")
-                css_selector = field_obj.get("tag")
+            # Initialize the driver
+            driver = webdriver.Chrome(options=chrome_options)
+            
+            # Set page load timeout
+            driver.set_page_load_timeout(30)
+            
+            try:
+                # Navigate to the URL
+                driver.get(url)
                 
-                if not css_selector:
-                    continue
+                # Wait for page to load (you can adjust the wait time)
+                import time
+                time.sleep(3)  # Simple wait
+                
+                # Get page source and parse with BeautifulSoup
+                html = driver.page_source
+                soup = BeautifulSoup(html, 'html.parser')
+                
+                # Extract data using the selected fields
+                results = {}
+                for field_obj in selected_fields:
+                    field_name = field_obj.get("field")
+                    css_selector = field_obj.get("tag")
                     
-                # Try with more flexible selector
-                elements = soup.select(css_selector)
-                results[field_name] = [elem.text.strip() for elem in elements]
+                    if not css_selector:
+                        continue
+                    
+                    # Try each selector (they might be comma-separated)
+                    elements = []
+                    for selector in css_selector.split(','):
+                        selector = selector.strip()
+                        try:
+                            # Try with Selenium first for dynamic content
+                            selenium_elements = driver.find_elements_by_css_selector(selector)
+                            if selenium_elements:
+                                elements = selenium_elements
+                                break
+                        except Exception:
+                            # If Selenium selector fails, try with BeautifulSoup
+                            bs_elements = soup.select(selector)
+                            if bs_elements:
+                                elements = bs_elements
+                                break
+                    
+                    # If no elements found, try alternative selectors
+                    if not elements:
+                        for selector in css_selector.split(','):
+                            selector = selector.strip()
+                            alternatives = generate_alternative_selectors(selector)
+                            for alt_selector in alternatives:
+                                try:
+                                    # Try with Selenium first
+                                    selenium_elements = driver.find_elements_by_css_selector(alt_selector)
+                                    if selenium_elements:
+                                        elements = selenium_elements
+                                        break
+                                except Exception:
+                                    # Fall back to BeautifulSoup
+                                    bs_elements = soup.select(alt_selector)
+                                    if bs_elements:
+                                        elements = bs_elements
+                                        break
+                            if elements:
+                                break
+                    
+                    # Extract text from elements
+                    results[field_name] = []
+                    
+                    # Handle different element types (Selenium vs BeautifulSoup)
+                    for elem in elements:
+                        if hasattr(elem, 'text'):  # BeautifulSoup element
+                            text = elem.text.strip()
+                        else:  # Selenium WebElement
+                            text = elem.text.strip()
+                        
+                        # Remove excessive whitespace
+                        text = re.sub(r'\s+', ' ', text)
+                        results[field_name].append(text)
                 
-            return results
-        except Exception as nested_e:
-            return {"error": f"Failed to extract data: {str(nested_e)}"}
-
+                return results
+                
+            finally:
+                # Always close the driver to free resources
+                driver.quit()
+                
+        except Exception as selenium_e:
+            print(f"Selenium extraction also failed: {str(selenium_e)}")
+            
+            # Last resort: try with a different requests parser
+            try:
+                response = requests.get(url, headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                })
+                soup = BeautifulSoup(response.text, 'html5lib')  # Use html5lib if available
+                
+                results = {}
+                for field_obj in selected_fields:
+                    field_name = field_obj.get("field")
+                    css_selector = field_obj.get("tag")
+                    
+                    if not css_selector:
+                        continue
+                        
+                    # Try with more flexible selector
+                    elements = soup.select(css_selector)
+                    results[field_name] = [elem.text.strip() for elem in elements]
+                    
+                return results
+            except Exception as final_e:
+                return {"error": f"All extraction methods failed. Last error: {str(final_e)}"}
+            
 def generate_alternative_selectors(original_selector):
     """Generate alternative selectors if the original one doesn't work."""
     alternatives = []

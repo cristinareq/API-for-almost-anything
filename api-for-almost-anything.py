@@ -1086,36 +1086,42 @@ def results_page():
         st.markdown("</div>", unsafe_allow_html=True)
     
     with tab3:
-    
+
         st.subheader("Test Extraction")
-        
+
         if st.button("Extract Data Now", key="extract_now"):
             with st.spinner("Fetching data from website..."):
                 extracted_data = extract_data_from_website(url, selected_fields)
                 st.session_state["extracted_data"] = extracted_data
-        
+
         if "extracted_data" in st.session_state:
             data = st.session_state["extracted_data"]
-            
+
             if "error" in data:
                 st.error(f"Error extracting data: {data['error']}")
             else:
                 st.success("Data extracted successfully!")
-                
+
+                # show JSON preview 
+                st.markdown("##### JSON preview")
+                st.json(data, expanded=False)  
+                st.markdown("---")
+
                 # Convert to DataFrame for display
                 # Handle different array lengths
-                max_length = max([len(v) for v in data.values()]) if data else 0
-                padded_data = {}
-                
-                for k, v in data.items():
-                    padded_data[k] = v + [None] * (max_length - len(v))
-                
+                max_length = max(len(v) for v in data.values()) if data else 0
+                padded_data = {
+                    k: v + [None] * (max_length - len(v))
+                    for k, v in data.items()
+                }
                 df = pd.DataFrame(padded_data)
-                st.dataframe(df)
-                
+
+                st.markdown("##### Table view")
+                st.dataframe(df, use_container_width=True)
+
                 # Download options
                 col1, col2 = st.columns(2)
-                
+
                 with col1:
                     # JSON download
                     json_data = json.dumps(data, indent=4)
@@ -1125,7 +1131,7 @@ def results_page():
                         file_name="extracted_data.json",
                         mime="application/json"
                     )
-                
+
                 with col2:
                     # CSV download
                     csv = df.to_csv(index=False)
@@ -1135,8 +1141,9 @@ def results_page():
                         file_name="extracted_data.csv",
                         mime="text/csv"
                     )
-        
+
         st.markdown("</div>", unsafe_allow_html=True)
+
 
 # Merge code page
 def merge_code_page():
